@@ -1,9 +1,0 @@
-<library path="lib/libJointController">
-
-  <class name="tiago_controller/JointController" type="tiago_controller::JointController" base_class_type="controller_interface::ControllerBase">
-    <description>
-      ROS joint controller for RobotFramework.
-    </description>
-  </class>
-
-</library>

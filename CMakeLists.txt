@@ -1,41 +1,60 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(tiago_controller)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+find_package(inria_wbc REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  robot_framework_msgs
   std_msgs
   hardware_interface
   pluginlib
   controller_interface
+  message_generation
+  std_srvs
 )
 
-catkin_package(
-  CATKIN_DEPENDS roscpp std_msgs robot_framework_msgs hardware_interface pluginlib controller_interface
+catkin_package(CATKIN_DEPENDS 
+  roscpp 
+  std_msgs 
+  std_srvs
+  hardware_interface 
+  pluginlib 
+  controller_interface 
+  message_runtime
 )
 
-add_library(JointController
-  SHARED
-    src/JointController.cpp
+
+
+add_library(tiago_joint_controller SHARED 
+  src/joint_controller.cpp
 )
 
-target_include_directories(JointController
+target_compile_options(tiago_joint_controller PRIVATE -Wno-shadow)
+target_compile_features(tiago_joint_controller PUBLIC cxx_std_11)
+target_link_options(tiago_joint_controller PRIVATE "LINKER:--no-as-needed")
+
+target_include_directories(tiago_joint_controller
+ PUBLIC
+   ${catkin_INCLUDE_DIRS}
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(tiago_joint_controller
   PUBLIC
-    include
-    ${catkin_INCLUDE_DIRS}
+    ${catkin_LIBRARIES}
+    inria_wbc::inria_wbc
 )
-target_link_libraries(JointController ${catkin_LIBRARIES})
 
-install(TARGETS JointController
+SET_TARGET_PROPERTIES(tiago_joint_controller  PROPERTIES LINK_FLAGS -Wl,-no-as-needed)
+
+install(TARGETS tiago_joint_controller
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(FILES JointController_plugins.xml
+install(FILES controller_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 install(DIRECTORY include/
@@ -46,4 +65,6 @@ install(DIRECTORY launch/
 
 install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+
+
 
