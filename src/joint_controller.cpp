@@ -26,6 +26,8 @@ namespace tiago_controller
                 " Make sure this is registered in the hardware_interface::RobotHW class.");
       return false;
     }
+    ROS_INFO("INIT REQUEST 2");
+
 
     position_iface->clearClaims();
 
@@ -38,6 +40,8 @@ namespace tiago_controller
                 " Make sure this is registered in the hardware_interface::RobotHW class.");
       return false;
     }
+    ROS_INFO("INIT REQUEST 3");
+
 
     velocity_iface->clearClaims();
 
@@ -46,6 +50,8 @@ namespace tiago_controller
       ROS_ERROR("Failed to initialize the controller");
       return false;
     }
+    ROS_INFO("INIT REQUEST 4");
+
 
     // Saves the resources claimed by this controller
     claimed_resources.push_back(hardware_interface::InterfaceResources(
@@ -59,8 +65,9 @@ namespace tiago_controller
     velocity_iface->clearClaims();
 
     // Changes state to INITIALIZED
-    // state_ = INITIALIZED;
+    state_ = INITIALIZED;
 
+    ROS_INFO("INIT request OK");
     return true;
   }
 
