@@ -1,6 +1,6 @@
 <launch>
   <!-- Load joint controller configurations from YAML file to parameter server -->
-  <rosparam command="load" file="$(find tiago_controller)/config/talos_control.yaml" />
+  <rosparam command="load" file="$(find tiago_controller)/config/tiago_control.yaml" />
     <!-- <param name="robot_description" command="$(find xacro)/xacro '$(find tiago_description)/robots/tiago.xacro'" /> -->
 
   <!-- load the controllers -->

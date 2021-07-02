@@ -1,11 +1,10 @@
 #ifndef TIAGO_JointController_HPP_
 #define TIAGO_JointController_HPP_
 
-#include <ros/ros.h>
-#include <std_msgs/Float64MultiArray.h>
-
 #include <eigen3/Eigen/Core>
 
+#include <ros/ros.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
@@ -19,10 +18,13 @@
 #include <thread>
 #include <vector>
 
+
+
+
 namespace tiago_controller {
     class JointController : public controller_interface::ControllerBase {
     public:
-        JointController() {}
+        JointController() {ROS_INFO("tiago_controller::constructor"); }
         ~JointController() {}
         void update(const ros::Time& time, const ros::Duration& period);
 
