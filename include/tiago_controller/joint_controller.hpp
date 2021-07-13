@@ -42,16 +42,35 @@ namespace tiago_controller
         bool init(hardware_interface::PositionJointInterface *position_iface,
                   hardware_interface::VelocityJointInterface *velocity_iface,
                   ros::NodeHandle &root_nh, ros::NodeHandle &control_nh);
-        void initInriaWbc();
-        void readROSParams();
+        void readParametersROS(ros::NodeHandle &controller_nh);
 
-        std::string yaml_inria_wbc_controller_;
+        void initInriaWbc();
+
+        std::string yaml_inria_wbc_;
         std::vector<std::string> joint_names_;
         std::vector<std::string> wbc_joint_names_;
+        Eigen::VectorXd position_cmd_;
+        
         std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_;
         std::shared_ptr<inria_wbc::controllers::PosTracker> controller_;
         inria_wbc::controllers::SensorData sensor_data_; //sensor data to give to the stabilizer
     };
+
+    template <typename Param>
+    bool getParameter(std::string &myParamName, Param &myParam, ros::NodeHandle &controller_nh)
+    {
+        std::string ns;
+        // if you want to add a namespace concerning ROS parameters (optional)
+        if (controller_nh.getParam("/namespace", ns))
+            myParamName = ns + myParamName;
+
+        if (!controller_nh.getParam(myParamName, myParam))
+        {
+            ROS_ERROR_STREAM("Can't read param " << myParamName);
+            return false;
+        }
+        return true;
+    }
 } // namespace tiago_controller
 
 PLUGINLIB_EXPORT_CLASS(tiago_controller::JointController, controller_interface::ControllerBase)

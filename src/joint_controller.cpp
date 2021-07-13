@@ -8,22 +8,24 @@ namespace tiago_controller
       ros::NodeHandle &root_nh, ros::NodeHandle &control_nh)
   {
     ROS_INFO("LOADING TIAGO JOINT CONTROLLER... (JointController::init)");
-    readROSParams();
     return true;
   }
 
-  void JointController::readROSParams()
+  void JointController::readParametersROS(ros::NodeHandle& controller_nh)
   {
-    std::string yaml_inria_wbc_controller_param_name = "/talos_controller/yaml_inria_wbc_controller";
-    if (!getParameter(yaml_inria_wbc_controller_param_name, yaml_inria_wbc_controller_, controller_nh))
-      ROS_ERROR_STREAM("/talos_controller/yaml_inria_wbc_controller parameter not found, needed for inria_wbc controller parameters");
-    ROS_INFO("Using yaml:" << yaml_inria_wbc_controller_);
+    std::string name = "/talos_controller/yaml_inria_wbc";
+    if (!getParameter(name, yaml_inria_wbc_, controller_nh))
+      ROS_ERROR_STREAM("/talos_controller/yaml_inria_wbc parameter not found, needed for inria_wbc controller parameters");
+    ROS_INFO_STREAM("Using yaml:" << yaml_inria_wbc_);
   }
 
   void JointController::initInriaWbc()
   {
-    auto controller_config = IWBC_CHECK(YAML::LoadFile(yaml_inria_wbc_controller_));
+    YAML::Node runtime_config = IWBC_CHECK(YAML::LoadFile(yaml_inria_wbc_));
+    auto behavior_yaml = IWBC_CHECK(runtime_config["iwbc_controller"].as<std::string>());
+    auto controller_yaml = IWBC_CHECK(runtime_config["iwbc_controller"].as<std::string>());
 
+    auto controller_config = IWBC_CHECK(YAML::LoadFile(controller_yaml));
     auto controller_base_path = controller_config["CONTROLLER"]["base_path"].as<std::string>();
     auto controller_robot_urdf = controller_config["CONTROLLER"]["urdf"].as<std::string>();
     controller_config["CONTROLLER"]["urdf"] = controller_base_path + "/" + controller_robot_urdf;
@@ -34,7 +36,7 @@ namespace tiago_controller
     auto base_controller = inria_wbc::controllers::Factory::instance().create(controller_name, controller_config);
     controller_ = std::static_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
 
-    auto behavior_config = IWBC_CHECK(YAML::LoadFile(yaml_inria_wbc_behavior_));
+    auto behavior_config = IWBC_CHECK(YAML::LoadFile(behavior_yaml));
     auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
     behavior_ = inria_wbc::behaviors::Factory::instance().create(behavior_name, controller_, behavior_config);
     ROS_INFO_STREAM("Loaded behavior from factory " << behavior_name);
