@@ -45,15 +45,20 @@ namespace tiago_controller
         void readParametersROS(ros::NodeHandle &controller_nh);
 
         void initInriaWbc();
+        void initJoints(hardware_interface::PositionJointInterface *position_iface,
+                        ros::NodeHandle &controller_nh);
 
+        // inria_wbc
         std::string yaml_inria_wbc_;
-        std::vector<std::string> joint_names_;
         std::vector<std::string> wbc_joint_names_;
-        Eigen::VectorXd position_cmd_;
-        
+        std::map<std::string, double> map_next_pos_;
         std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_;
         std::shared_ptr<inria_wbc::controllers::PosTracker> controller_;
-        inria_wbc::controllers::SensorData sensor_data_; //sensor data to give to the stabilizer
+        inria_wbc::controllers::SensorData sensor_data_;
+        bool stop_controller_ = false;
+
+        // ros_control
+        std::vector<hardware_interface::JointHandle> rc_joints_;
     };
 
     template <typename Param>
