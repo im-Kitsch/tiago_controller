@@ -1,6 +1,7 @@
 tiago_controller:
   type: tiago_controller/joint_controller
-  yaml_inria_wbc: tiago_behavior.yaml
+  yaml_inria_wbc: config/tiago_behavior.yaml
+  base_directory: /home/pal/catkin_ws/src/tiago_controller/
 
 /gazebo_ros_control:   
   pid_gains:
@@ -19,5 +20,5 @@ tiago_controller:
     wheel_left_joint: {p: 10000.0, i: 0.01, d: 10.0}
     wheel_right_joint: {p: 10000.0, i: 0.01, d: 10.0}
 
-namespace: /tiago
+#namespace: /tiago
 

@@ -50,6 +50,8 @@ namespace tiago_controller
 
         // inria_wbc
         std::string yaml_inria_wbc_;
+        std::string base_directory_;
+        
         std::vector<std::string> wbc_joint_names_;
         std::map<std::string, double> map_next_pos_;
         std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_;

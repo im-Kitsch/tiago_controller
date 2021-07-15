@@ -9,9 +9,8 @@ namespace tiago_controller
       ros::NodeHandle &root_nh, ros::NodeHandle &control_nh)
   {
     ROS_INFO("LOADING TIAGO JOINT CONTROLLER... (JointController::init)");
-    auto cwd = boost::filesystem::current_path();
-    ROS_INFO_STREAM("Current directory:" << cwd.string());
 
+    readParametersROS(control_nh);
     initInriaWbc();
     initJoints(position_iface, control_nh);
     stop_controller_ = false;
@@ -20,37 +19,54 @@ namespace tiago_controller
 
   void JointController::readParametersROS(ros::NodeHandle &controller_nh)
   {
-    std::string name = "/talos_controller/yaml_inria_wbc";
-    if (!getParameter(name, yaml_inria_wbc_, controller_nh))
-      ROS_ERROR_STREAM("/talos_controller/yaml_inria_wbc parameter not found, needed for inria_wbc controller parameters");
-    ROS_INFO_STREAM("Using yaml:" << yaml_inria_wbc_);
+    {
+      std::string name = "/tiago_controller/yaml_inria_wbc";
+      if (!getParameter(name, yaml_inria_wbc_, controller_nh))
+        ROS_ERROR_STREAM("/talos_controller/yaml_inria_wbc parameter not found, needed for inria_wbc controller parameters");
+      ROS_INFO_STREAM("Using yaml:" << yaml_inria_wbc_);
+    }
+    {
+      std::string name = "/tiago_controller/base_directory";
+      if (!getParameter(name, base_directory_, controller_nh))
+        ROS_ERROR_STREAM("/talos_controller/base_directory parameter not found, needed for inria_wbc controller parameters");
+      ROS_INFO_STREAM("Using base directory:" << base_directory_);
+    }
   }
 
   // initialize the whole body controller from the yaml yaml_inria_wbc_ (from ros params)
   void JointController::initInriaWbc()
   {
-    ROS_INFO_STREAM("main YAML file:" << yaml_inria_wbc_);
-    YAML::Node runtime_config = IWBC_CHECK(YAML::LoadFile(yaml_inria_wbc_));
-    auto behavior_yaml = IWBC_CHECK(runtime_config["iwbc_controller"].as<std::string>());
-    auto controller_yaml = IWBC_CHECK(runtime_config["iwbc_controller"].as<std::string>());
+    ROS_INFO_STREAM("main YAML file:" << base_directory_ + "/" + yaml_inria_wbc_);
+    try
+    {
+      YAML::Node runtime_config = IWBC_CHECK(YAML::LoadFile(base_directory_ + "/" + yaml_inria_wbc_));
+      auto behavior_yaml = IWBC_CHECK(runtime_config["iwbc_behavior"].as<std::string>());
+      auto controller_yaml = IWBC_CHECK(runtime_config["iwbc_controller"].as<std::string>());
+      ROS_INFO_STREAM("Using controller yaml:" << base_directory_ + "/"  + controller_yaml);
+      ROS_INFO_STREAM("Using behavior yaml:" << base_directory_ + "/"  + behavior_yaml);
 
-    auto controller_config = IWBC_CHECK(YAML::LoadFile(controller_yaml));
-    auto controller_base_path = controller_config["CONTROLLER"]["base_path"].as<std::string>();
-    auto controller_robot_urdf = controller_config["CONTROLLER"]["urdf"].as<std::string>();
-    controller_config["CONTROLLER"]["urdf"] = controller_base_path + "/" + controller_robot_urdf;
+      auto controller_config = IWBC_CHECK(YAML::LoadFile(base_directory_ + "/" + controller_yaml));
+      auto controller_base_path = controller_config["CONTROLLER"]["base_path"].as<std::string>();
+      auto controller_robot_urdf = controller_config["CONTROLLER"]["urdf"].as<std::string>();
+      controller_config["CONTROLLER"]["urdf"] = controller_base_path + "/" + controller_robot_urdf;
 
-    ROS_INFO_STREAM("LOADING URDF MODEL FROM: " << controller_config["CONTROLLER"]["urdf"].as<std::string>());
+      ROS_INFO_STREAM("LOADING URDF MODEL FROM: " << controller_config["CONTROLLER"]["urdf"].as<std::string>());
 
-    auto controller_name = IWBC_CHECK(controller_config["CONTROLLER"]["name"].as<std::string>());
-    auto base_controller = inria_wbc::controllers::Factory::instance().create(controller_name, controller_config);
-    controller_ = std::static_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
+      auto controller_name = IWBC_CHECK(controller_config["CONTROLLER"]["name"].as<std::string>());
+      auto base_controller = inria_wbc::controllers::Factory::instance().create(controller_name, controller_config);
+      controller_ = std::static_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
 
-    auto behavior_config = IWBC_CHECK(YAML::LoadFile(behavior_yaml));
-    auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
-    behavior_ = inria_wbc::behaviors::Factory::instance().create(behavior_name, controller_, behavior_config);
-    ROS_INFO_STREAM("Loaded behavior from factory " << behavior_name);
+      auto behavior_config = IWBC_CHECK(YAML::LoadFile(base_directory_ + "/" + behavior_yaml));
+      auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
+      behavior_ = inria_wbc::behaviors::Factory::instance().create(behavior_name, controller_, behavior_config);
+      ROS_INFO_STREAM("Loaded behavior from factory " << behavior_name);
 
-    wbc_joint_names_ = controller_->controllable_dofs();
+      wbc_joint_names_ = controller_->controllable_dofs();
+    }
+    catch (std::exception &e)
+    {
+      ROS_ERROR_STREAM("TiagoController: Cannot init inria_wbc!" << e.what());
+    }
   }
 
   // get the handles to each joint (uses the names from inria_wbc)

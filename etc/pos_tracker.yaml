@@ -1,6 +1,6 @@
 CONTROLLER:
   name: pos-tracker
-  base_path: /home/pal/inria_wbc/etc/tiago
+  base_path: /home/pal/catkin_ws/src/tiago_controller/etc
   tasks: tasks.yaml
   frames: frames.yaml
   urdf: tiago_steel.urdf
