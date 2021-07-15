@@ -143,7 +143,7 @@ namespace tiago_controller
 
   void JointController::update(const ros::Time &time, const ros::Duration &period)
   {
-    ROS_INFO("Update");
+    //ROS_INFO("Update");
     // update the whole-body controller
     try
     {
@@ -160,6 +160,7 @@ namespace tiago_controller
     if (!stop_controller_)
     {
       auto q = controller_->q().tail(wbc_joint_names_.size());
+      //std::cout<<"q: "<<q.transpose()<<std::endl;
       assert(rc_joint_.size() == q.size());
       for (size_t i = 0; i < wbc_joint_names_.size(); ++i)
         rc_joints_[i].setCommand(q[i]);
