@@ -81,7 +81,6 @@ namespace tiago_controller
 
       wbc_joint_names_ = controller_->controllable_dofs();
       init_sequence_duration_ = IWBC_CHECK(runtime_config["init_duration"].as<double>());
-
     }
     catch (std::exception &e)
     {
@@ -159,9 +158,9 @@ namespace tiago_controller
   {
     if (!init_sequence_q_.empty())
     {
-        for (int i = 0; i < wbc_joint_names_.size(); ++i)
-          rc_joints_[i].setCommand(init_sequence_q_.front()[i]);
-        init_sequence_q_.pop_front();//slow but we don' t care here..
+      for (int i = 0; i < wbc_joint_names_.size(); ++i)
+        rc_joints_[i].setCommand(init_sequence_q_.front()[i]);
+      init_sequence_q_.pop_front(); //slow but we don' t care here..
     }
     else
     { // normal QP solver
@@ -197,7 +196,7 @@ namespace tiago_controller
     ROS_INFO("Starting controller tiago_controller");
     initInriaWbc();
     stop_controller_ = false;
-    
+
     // get the current position
     Eigen::VectorXd current_joint_pos = Eigen::VectorXd::Zero(wbc_joint_names_.size());
     for (size_t i = 0; i < wbc_joint_names_.size(); ++i)
@@ -205,9 +204,9 @@ namespace tiago_controller
     ROS_INFO_STREAM("tiago_controller starting, joints=" << current_joint_pos.transpose());
     // minimum jerk initialization trajectory for init sequence
     auto q_v = trajectory_handler::compute_traj(
-        current_joint_pos, 
-        controller_->q0(), 
-        controller_->dt(), 
+        current_joint_pos,
+        controller_->q0(),
+        controller_->dt(),
         init_sequence_duration_);
     init_sequence_q_ = std::list<Eigen::VectorXd>(q_v.begin(), q_v.end());
   }
