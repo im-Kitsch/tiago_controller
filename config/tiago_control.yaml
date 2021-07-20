@@ -1,6 +1,6 @@
 tiago_controller:
   type: tiago_controller/joint_controller
-  yaml_inria_wbc: config/tiago_behavior.yaml
+  yaml_inria_wbc: config/tiago_iwbc.yaml
   base_directory: /home/pal/catkin_ws/src/tiago_controller/
 
 /gazebo_ros_control:   

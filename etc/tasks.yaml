@@ -7,7 +7,7 @@ ee:
 posture:
     type: posture
     weight: 10.00
-    kp: 10.0
+    kp: 100.0
     ref: start
 bounds:
     type: bounds

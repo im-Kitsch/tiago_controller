@@ -41,26 +41,31 @@ namespace tiago_controller
     private:
         bool init(hardware_interface::PositionJointInterface *position_iface,
                   hardware_interface::VelocityJointInterface *velocity_iface,
+                  hardware_interface::JointStateInterface *joint_iface,
                   ros::NodeHandle &root_nh, ros::NodeHandle &control_nh);
         void readParametersROS(ros::NodeHandle &controller_nh);
 
         void initInriaWbc();
-        void initJoints(hardware_interface::PositionJointInterface *position_iface,
-                        ros::NodeHandle &controller_nh);
+
 
         // inria_wbc
         std::string yaml_inria_wbc_;
         std::string base_directory_;
-        
+
         std::vector<std::string> wbc_joint_names_;
         std::map<std::string, double> map_next_pos_;
         std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_;
         std::shared_ptr<inria_wbc::controllers::PosTracker> controller_;
         inria_wbc::controllers::SensorData sensor_data_;
         bool stop_controller_ = false;
-
+   
+        // init sequence
+        std::list<Eigen::VectorXd> init_sequence_q_;
+        int init_sequence_duration_ = 1;
+        
         // ros_control
         std::vector<hardware_interface::JointHandle> rc_joints_;
+        std::vector<hardware_interface::JointStateHandle> rc_joint_states_;
     };
 
     template <typename Param>

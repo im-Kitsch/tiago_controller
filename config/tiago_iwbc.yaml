@@ -2,3 +2,4 @@
 # path relative to base_directory
 iwbc_controller: etc/pos_tracker.yaml
 iwbc_behavior: etc/cartesian_line.yaml
+init_duration: 3
