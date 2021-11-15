@@ -5,8 +5,8 @@
 
 
   <!-- unload existing controllers -->
-  <node name="controller_manager_stopper" pkg="controller_manager" type="controller_manager" respawn="false"
-    output="screen" args="stop torso_controller head_controller arm_controller" />
+  <node name="controller_manager_stopper" pkg="controller_manager" type="unspawner" respawn="false"
+    output="screen" args="torso_controller head_controller arm_controller" />-->
 
   <!-- load the controllers -->
   <node name="joint_controller" pkg="controller_manager" type="spawner" respawn="false"
