@@ -10,6 +10,7 @@ posture:
     kp: 100.0
     ref: start
 bounds:
+    dt: 0.001
     type: bounds
     weight: 10000
 self_collision-gripper:
