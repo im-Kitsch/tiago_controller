@@ -202,7 +202,7 @@ namespace tiago_controller
     // get the current position
     Eigen::VectorXd current_joint_pos = Eigen::VectorXd::Zero(wbc_joint_names_.size());
     for (size_t i = 0; i < wbc_joint_names_.size(); ++i)
-      current_joint_pos[i] = rc_joint_states_[i].getAbsolutePosition();
+      current_joint_pos[i] = rc_joint_states_[i].getPosition();
     ROS_INFO_STREAM("tiago_controller starting, joints=" << current_joint_pos.transpose());
     // minimum jerk initialization trajectory for init sequence
     auto q_v = trajectory_handler::compute_traj(
