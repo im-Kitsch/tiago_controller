@@ -4,10 +4,16 @@ ee:
     weight: 100.0
     kp: 1300.0
     mask: 111111
+# head:
+#     type: se3
+#     tracked: head_2_link
+#     weight: 1000.0
+#     kp: 100.0
+#     mask: 111111
 posture:
     type: posture
     weight: 10.00
-    kp: 100.0
+    kp: 10.0
     ref: start
 bounds:
     dt: 0.001

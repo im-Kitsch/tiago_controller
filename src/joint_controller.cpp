@@ -72,7 +72,9 @@ namespace tiago_controller
 
       auto controller_name = IWBC_CHECK(controller_config["CONTROLLER"]["name"].as<std::string>());
       auto base_controller = inria_wbc::controllers::Factory::instance().create(controller_name, controller_config);
-      controller_ = std::static_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
+      controller_ = std::dynamic_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
+      IWBC_ASSERT(controller_, " We need at least a PostTracker!");
+
 
       auto behavior_config = IWBC_CHECK(YAML::LoadFile(base_directory_ + "/" + behavior_yaml));
       auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
@@ -178,8 +180,8 @@ namespace tiago_controller
       // send the commands
       if (!stop_controller_)
       {
-        auto q = controller_->q().tail(wbc_joint_names_.size());
-        //std::cout<<"q: "<<q.transpose()<<std::endl;
+        // careful: no auto here!
+        Eigen::VectorXd q = controller_->q(false).tail(wbc_joint_names_.size());
         assert(rc_joint_.size() == q.size());
         for (size_t i = 0; i < wbc_joint_names_.size(); ++i)
           rc_joints_[i].setCommand(q[i]);
