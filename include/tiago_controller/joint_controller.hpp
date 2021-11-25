@@ -8,6 +8,8 @@
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
+#include <std_srvs/Empty.h>
+#include <geometry_msgs/Pose.h>
 
 #include <boost/bind.hpp>
 #include <chrono>
@@ -17,6 +19,10 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+// custom ROS messages
+// for service
+#include <tiago_controller/move.h>
 
 // inria_wbc
 #include <inria_wbc/behaviors/behavior.hpp>
@@ -47,6 +53,8 @@ namespace tiago_controller
 
         void initInriaWbc();
 
+        // callback
+        bool move_service_cb(tiago_controller::move::Request& req, std_srvs::Empty::Response &res);
 
         // inria_wbc
         std::string yaml_inria_wbc_;
@@ -55,6 +63,8 @@ namespace tiago_controller
         std::vector<std::string> wbc_joint_names_;
         std::map<std::string, double> map_next_pos_;
         std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_;
+        std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_move_;
+        
         std::shared_ptr<inria_wbc::controllers::PosTracker> controller_;
         inria_wbc::controllers::SensorData sensor_data_;
         bool stop_controller_ = false;
@@ -66,6 +76,9 @@ namespace tiago_controller
         // ros_control
         std::vector<hardware_interface::JointHandle> rc_joints_;
         std::vector<hardware_interface::JointStateHandle> rc_joint_states_;
+
+        // ROS topics and services
+        ros::ServiceServer service_move_;
     };
 
     template <typename Param>

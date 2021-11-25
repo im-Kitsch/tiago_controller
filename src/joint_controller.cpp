@@ -1,6 +1,12 @@
 #include <boost/filesystem.hpp>
+#include <std_srvs/Empty.h>
+
+
 #include "tiago_controller/joint_controller.hpp"
+#include "tiago_controller/behavior_move.hpp"
+
 #include <inria_wbc/utils/trajectory_handler.hpp>
+
 
 namespace tiago_controller
 {
@@ -32,6 +38,11 @@ namespace tiago_controller
     ROS_INFO_STREAM("initJoints: done [" << wbc_joint_names_.size() << "  joints]");
 
     stop_controller_ = false;
+
+
+    // initialize the service and topic
+    service_move_ = control_nh.advertiseService("move", &JointController::move_service_cb, this);
+
     return true;
   }
 
@@ -80,6 +91,9 @@ namespace tiago_controller
       auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
       behavior_ = inria_wbc::behaviors::Factory::instance().create(behavior_name, controller_, behavior_config);
       ROS_INFO_STREAM("Loaded behavior from factory " << behavior_name);
+
+      // will be 0 / false if this is not a move behavior (in that case, no ROS topic/service)
+      behavior_move_ = std::dynamic_pointer_cast<inria_wbc::behaviors::generic::Move>(behavior_);
 
       wbc_joint_names_ = controller_->controllable_dofs();
       init_sequence_duration_ = IWBC_CHECK(runtime_config["init_duration"].as<double>());
@@ -217,5 +231,11 @@ namespace tiago_controller
   {
     ROS_INFO("Stopping controller tiago_controller");
     stop_controller_ = true;
+  }
+
+  bool JointController::move_service_cb(tiago_controller::move::Request& req, std_srvs::Empty::Response &res)
+   {
+    ROS_INFO_STREAM("Starting a trajectory (service) to" << req);
+    return true;
   }
 }

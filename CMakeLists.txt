@@ -12,7 +12,22 @@ find_package(catkin REQUIRED COMPONENTS
   controller_interface
   message_generation
   std_srvs
+  geometry_msgs
 )
+
+add_service_files(
+  FILES
+  move.srv
+)
+
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
+
+
 
 catkin_package(CATKIN_DEPENDS 
   roscpp 
@@ -22,12 +37,13 @@ catkin_package(CATKIN_DEPENDS
   pluginlib 
   controller_interface 
   message_runtime
+  geometry_msgs
 )
 
 
-
 add_library(tiago_joint_controller SHARED 
-  src/joint_controller.cpp
+  src/joint_controller.cpp # ros_control controller (using inria_wbc)
+  src/behavior_move.cpp # inria_wbc behavior
 )
 
 target_compile_options(tiago_joint_controller PRIVATE -Wno-shadow)
