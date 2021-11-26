@@ -1,9 +1,37 @@
 #include <boost/filesystem.hpp>
+#include <std_srvs/Empty.h>
+
 #include "tiago_controller/joint_controller.hpp"
+
 #include <inria_wbc/utils/trajectory_handler.hpp>
 
 namespace tiago_controller
 {
+
+  inline pinocchio::SE3 geometry_to_se3(const geometry_msgs::Pose &pose)
+  {
+    Eigen::Vector3d translation(pose.position.x, pose.position.y, pose.position.z);
+    Eigen::Quaterniond rotation(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+    return pinocchio::SE3(rotation, translation);
+  }
+
+  inline geometry_msgs::Pose se3_to_geometry(const pinocchio::SE3 &se3)
+  {
+    geometry_msgs::Pose pose;
+
+    pose.position.x = se3.translation()(0);
+    pose.position.y = se3.translation()(1);
+    pose.position.z = se3.translation()(2);
+
+    Eigen::Quaterniond q(se3.rotation());
+    pose.orientation.x = q.coeffs()(0);
+    pose.orientation.y = q.coeffs()(1);
+    pose.orientation.z = q.coeffs()(2);
+    pose.orientation.w = q.coeffs()(3); // yes, not the same as constructor!
+
+    return pose;
+  }
+
   bool JointController::init(
       hardware_interface::PositionJointInterface *position_iface,
       hardware_interface::VelocityJointInterface *velocity_iface,
@@ -32,6 +60,18 @@ namespace tiago_controller
     ROS_INFO_STREAM("initJoints: done [" << wbc_joint_names_.size() << "  joints]");
 
     stop_controller_ = false;
+
+    // ROS stuffs: initialize the services and topic
+    // services
+    service_move_ = control_nh.advertiseService("move", &JointController::move_service_cb, this);
+    service_traj_mode_ = control_nh.advertiseService("traj_mode", &JointController::traj_mode_service_cb, this);
+    service_tracking_mode_ = control_nh.advertiseService("tracking_mode", &JointController::tracking_mode_service_cb, this);
+    // subscribers
+    sub_ee_tracking_ = control_nh.subscribe("ee_target", 100, &JointController::tracking_ee_cb, this);
+    sub_head_tracking_ = control_nh.subscribe("head_target", 100, &JointController::tracking_head_cb, this);
+    // publishers
+    pub_ee_ = control_nh.advertise<geometry_msgs::Pose>("ee_pose", 100);
+    pub_head_ = control_nh.advertise<geometry_msgs::Pose>("head_pose", 100);
     return true;
   }
 
@@ -75,11 +115,13 @@ namespace tiago_controller
       controller_ = std::dynamic_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
       IWBC_ASSERT(controller_, " We need at least a PostTracker!");
 
-
       auto behavior_config = IWBC_CHECK(YAML::LoadFile(base_directory_ + "/" + behavior_yaml));
       auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
       behavior_ = inria_wbc::behaviors::Factory::instance().create(behavior_name, controller_, behavior_config);
       ROS_INFO_STREAM("Loaded behavior from factory " << behavior_name);
+
+      // will be 0 / false if this is not a move behavior (in that case, no ROS topic/service)
+      behavior_move_ = std::dynamic_pointer_cast<inria_wbc::behaviors::generic::Move>(behavior_);
 
       wbc_joint_names_ = controller_->controllable_dofs();
       init_sequence_duration_ = IWBC_CHECK(runtime_config["init_duration"].as<double>());
@@ -168,6 +210,7 @@ namespace tiago_controller
     { // normal QP solver
       try
       {
+        //ROS_INFO_STREAM("period:"<<period);// 100Hz on the robot, 1000 Hz in simu??
         behavior_->update(); //could have sensors here
       }
       catch (const std::exception &e)
@@ -191,6 +234,10 @@ namespace tiago_controller
         ROS_INFO("Tiago controller is stopped");
       }
     }
+
+    // publish the poses (according to the model, not the robot!)
+    pub_ee_.publish(se3_to_geometry(controller_->model_frame_pos("gripper_link")));
+    pub_head_.publish(se3_to_geometry(controller_->model_frame_pos("head_2_link")));
   }
 
   void JointController::starting(const ros::Time &time)
@@ -218,4 +265,86 @@ namespace tiago_controller
     ROS_INFO("Stopping controller tiago_controller");
     stop_controller_ = true;
   }
+
+  // the pose message is here:http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/Pose.html
+  // from command line: rosservice call /tiago_controller/move  "{pose: {position: {x: 0.5, y: 0.5, z: 1}}, duration: 1., use_orientation: False, task_name: ee }"
+
+  bool JointController::move_service_cb(tiago_controller::move::Request &req, std_srvs::Empty::Response &res)
+  {
+    if (mode_ != TRAJ)
+    {
+      ROS_ERROR("ERROR [tiago_controller]: trying to send a trajectory in tracking mode! [traj ignored]");
+      return false;
+    }
+    ROS_INFO_STREAM("Starting a trajectory (service) to" << req);
+    auto target_pos = controller_->get_se3_ref("ee");
+    // copy the position (and keep the orientation)
+    target_pos.translation()(0) = req.pose.position.x;
+    target_pos.translation()(1) = req.pose.position.y;
+    target_pos.translation()(2) = req.pose.position.z;
+
+    if (!behavior_move_)
+    {
+      ROS_ERROR_STREAM("WRONG behavior: we need a Move behavior to use the service move");
+      return false;
+    }
+
+    try
+    {
+      behavior_move_->set_target(req.task_name, target_pos, req.duration);
+    }
+    catch (std::exception &e)
+    {
+      ROS_ERROR_STREAM("iwbc::exception:" << e.what());
+      return false;
+    }
+    return true;
+  }
+
+  bool JointController::traj_mode_service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+  {
+    mode_ = TRAJ;
+    return true;
+  }
+
+  bool JointController::tracking_mode_service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+  {
+    mode_ = TRACKING;
+    return true;
+  }
+
+  void JointController::set_target(const std::string& task_name, const geometry_msgs::Pose &pose)
+  {
+    if (mode_ != TRACKING)
+    {
+      ROS_WARN("Warning [tiago_controller]: trying to send tracking positions whereas in trajectory mode! [tracking ignored]");
+      return;
+    }
+    // set the target
+    if (!behavior_move_)
+    {
+      ROS_ERROR("WRONG behavior: we need a Move behavior to use the service move");
+      return;
+    }
+    try
+    {
+      auto target_pos = geometry_to_se3(pose);
+      behavior_move_->set_target(task_name, target_pos);
+    }
+    catch (std::exception &e)
+    {
+      ROS_ERROR_STREAM("iwbc::exception:" << e.what());
+      return;
+    }
+  }
+
+  void JointController::tracking_ee_cb(const geometry_msgs::Pose &pose) {
+    set_target("ee", pose);
+  }
+
+  void JointController::tracking_head_cb(const geometry_msgs::Pose &pose)
+  {
+    set_target("head", pose);
+  }
+
 }

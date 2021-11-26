@@ -23,3 +23,8 @@ Tiago controller based on inria_wbc.
 - rqt -> controller manager -> stop torso/head/gripper/arm controllers
 - `source catkin_ws/devel/setup.bash` 
 - `roslaunch tiago_controller tiago_controller.launch`
+
+
+### services
+- `rosservice call /tiago_controller/move  "{pose: {position: {x: 0.5, y: 0.5, z: 1.2}}, duration: 1., use_orientation: False, use_position: True, task_name: ee}" 
+
