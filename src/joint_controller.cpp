@@ -178,7 +178,7 @@ namespace tiago_controller
     { // normal QP solver
       try
       {
-        ROS_INFO_STREAM("period:"<<period);
+        //ROS_INFO_STREAM("period:"<<period);
         behavior_->update(); //could have sensors here
       }
       catch (const std::exception &e)

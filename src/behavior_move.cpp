@@ -17,7 +17,16 @@ namespace inria_wbc
                 controller_->set_behavior_type(behavior_type_);
 
                 pos_tracker_ = std::static_pointer_cast<inria_wbc::controllers::PosTracker>(controller_);
-
+                auto workspace = IWBC_CHECK(c["workspace"]);
+                for (auto it = workspace.begin(); it != workspace.end(); ++it)
+                {
+                    auto task_name = IWBC_CHECK(it->first.as<std::string>());
+                    using pair_t = std::pair<double, double>;
+                    auto x = IWBC_CHECK(it->second["x"].as<pair_t>());
+                    auto y = IWBC_CHECK(it->second["y"].as<pair_t>());
+                    auto z = IWBC_CHECK(it->second["z"].as<pair_t>());
+                    workspaces_[task_name] = { x, y, z};
+                }
             }
 
             void Move::set_trajectory_target(const std::string &task_name, const pinocchio::SE3 &target, float duration)
@@ -25,6 +34,17 @@ namespace inria_wbc
                 // we assume that the target is valid (needs to be checked from outside!)
                 auto task_init = pos_tracker_->get_se3_ref(task_name);
                 auto pts = trajectory_handler::compute_traj(task_init, target, controller_->dt(), duration);
+                // filter by the workspace
+                auto range = [](double x, const std::pair<double, double>& min_max) {
+                    return std::max(min_max.first, std::min(x, min_max.second));
+                };
+                IWBC_ASSERT(workspaces_.find(task_name) != workspaces_.end(), task_name, "[task]-> workspace not found");
+                for (auto &p : pts) {
+                    p.translation()(0) = range(p.translation()(0), workspaces_[task_name].x);
+                    p.translation()(1) = range(p.translation()(1), workspaces_[task_name].y);
+                    p.translation()(2) = range(p.translation()(2), workspaces_[task_name].z);
+                }
+                // assign the trajectory
                 trajectories_[task_name] = {.points = pts, .time = 0};
             }
 
@@ -42,11 +62,10 @@ namespace inria_wbc
             {
                 for (auto it = trajectories_.begin(); it != trajectories_.end(); /*nothing*/)
                 {
-                    auto& traj = it->second;
+                    auto &traj = it->second;
                     IWBC_ASSERT(!traj.points.empty(), "invalid trajectory (empty)");
                     pos_tracker_->set_se3_ref(traj.points[traj.time], it->first);
                     traj.time++;
-                    std::cout<<" time:"<<traj.time<<std::endl;
 
                     // increment or erase (end of trajectory)
                     if (traj.time == (int)traj.points.size())

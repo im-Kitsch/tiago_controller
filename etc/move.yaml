@@ -1,2 +1,7 @@
 BEHAVIOR:
   name : generic::move
+  workspace:
+    ee: # task name
+      x: [0.3,1.0] # min,max
+      y: [-0.6, 0.6]
+      z: [0.3, 1.0]

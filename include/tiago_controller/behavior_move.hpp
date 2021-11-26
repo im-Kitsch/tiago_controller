@@ -34,8 +34,14 @@ namespace inria_wbc {
                     std::vector<pinocchio::SE3> points;
                     int time = 0;
                 };
+                struct Workspace {
+                    std::pair<double, double> x; // min/max
+                    std::pair<double, double> y; // min/max
+                    std::pair<double, double> z; // min/max
+                };
                 std::shared_ptr<controllers::PosTracker> pos_tracker_;
-                std::unordered_map<std::string,Traj> trajectories_;
+                std::unordered_map<std::string, Traj> trajectories_;
+                std::unordered_map<std::string, Workspace> workspaces_;
             };
         } // namespace generic
     } // namespace behaviors
