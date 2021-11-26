@@ -26,6 +26,29 @@ Tiago controller based on inria_wbc.
 - `roslaunch tiago_controller tiago_controller.launch`
 
 ### Deployment
+- `sh ./deploy.sh` 
+- `say yes, passwd is 'pal'`
+- `ssh pal@192.168.1.162 sync`
+- if we added a new controller, we need to reboot the robot
+
+- everything on the robot is on deployed_ws
+- in pos_tracker.yaml : use the deployed_ws in the path
+- in tiago_control.yaml: use deployed_ws
+- check deployed_ws/share for the config files
+- if we changed more than config files:
+
+  - pal-stop deployer
+  - pal-stop ros_bringup
+  - pal-start ros_bringup
+  - pal-start deployer
+
+#### Starting/Stopping the controller
+- `roslaunch tiago_controller tiago_controller.launch` 
+- stop: ` rosrun controller_manager controller_manager stop tiago_controller`
+rosrun controller_manager controller_manager stop tiago_controller
+
+
+
 
 ### Services and topics
 There are two modes: trajectory and tracking. Tracking can make the robot too fast is the target is not close.
