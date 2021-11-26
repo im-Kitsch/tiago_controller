@@ -72,6 +72,12 @@ namespace tiago_controller
     // publishers
     pub_ee_ = control_nh.advertise<geometry_msgs::Pose>("ee_pose", 100);
     pub_head_ = control_nh.advertise<geometry_msgs::Pose>("head_pose", 100);
+
+
+    // TTS client
+    tts_client_ = std::make_shared<TextToSpeechClient>("/tts");
+    tts_client_->text_to_speech("Initialization done, going to start position.");
+
     return true;
   }
 
@@ -277,6 +283,8 @@ namespace tiago_controller
       return false;
     }
     ROS_INFO_STREAM("Starting a trajectory (service) to" << req);
+    tts_client_->text_to_speech("Moving!");
+
     auto target_pos = controller_->get_se3_ref("ee");
     // copy the position (and keep the orientation)
     target_pos.translation()(0) = req.pose.position.x;
@@ -303,12 +311,14 @@ namespace tiago_controller
 
   bool JointController::traj_mode_service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
   {
+    tts_client_->text_to_speech("Trajectory mode");
     mode_ = TRAJ;
     return true;
   }
 
   bool JointController::tracking_mode_service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
   {
+    tts_client_->text_to_speech("Tracking mode");
     mode_ = TRACKING;
     return true;
   }

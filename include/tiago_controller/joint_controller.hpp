@@ -28,7 +28,7 @@
 #include <inria_wbc/behaviors/behavior.hpp>
 #include <inria_wbc/controllers/pos_tracker.hpp>
 #include "tiago_controller/behavior_move.hpp"
-
+#include "tiago_controller/tts_client.hpp"
 
 namespace tiago_controller
 {
@@ -96,6 +96,9 @@ namespace tiago_controller
         // mode
         enum mode_t { TRAJ, TRACKING };
         mode_t mode_ = TRAJ;
+
+        // text to speech
+        std::shared_ptr<TextToSpeechClient> tts_client_;
     };
 
     template <typename Param>
