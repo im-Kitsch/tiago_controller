@@ -18,22 +18,24 @@ namespace inria_wbc {
                 Move(const Move&) = delete;
                 virtual ~Move() {}
 
-                void set_trajectory_target(const pinocchio::SE3& target);
-                void set_immediate_target(const pinocchio::SE3& target);
-                const pinocchio::SE3& current_target() const { return current_target_; }
-                bool target_reached() const { return target_reached_; }
+                void set_trajectory_target(const std::string& task_name, const pinocchio::SE3& target, float duration);
+//                void set_immediate_target(const pinocchio::SE3& target, float duration);
+
+                bool target_reached(const std::string& task_name) const {
+                    // trajectories are removed once they have reached their last point
+                    return trajectories_.find(task_name) != trajectories_.end();
+                }
 
                 void update(const controllers::SensorData& sensor_data = {}) override;
                 std::string behavior_type() const override { return controllers::behavior_types::DOUBLE_SUPPORT; };
 
             private:
+                struct Traj {
+                    std::vector<pinocchio::SE3> points;
+                    int time = 0;
+                };
                 std::shared_ptr<controllers::PosTracker> pos_tracker_;
-                int time_ = 0;
-                std::vector<pinocchio::SE3> trajectory_;
-                float trajectory_duration_; // from YAML
-                std::string task_name_; // from YAML
-                pinocchio::SE3 current_target_; // form YAML
-                bool target_reached_ = true;
+                std::unordered_map<std::string,Traj> trajectories_;
             };
         } // namespace generic
     } // namespace behaviors

@@ -1,12 +1,10 @@
 #include <boost/filesystem.hpp>
 #include <std_srvs/Empty.h>
 
-
 #include "tiago_controller/joint_controller.hpp"
 #include "tiago_controller/behavior_move.hpp"
 
 #include <inria_wbc/utils/trajectory_handler.hpp>
-
 
 namespace tiago_controller
 {
@@ -38,7 +36,6 @@ namespace tiago_controller
     ROS_INFO_STREAM("initJoints: done [" << wbc_joint_names_.size() << "  joints]");
 
     stop_controller_ = false;
-
 
     // initialize the service and topic
     service_move_ = control_nh.advertiseService("move", &JointController::move_service_cb, this);
@@ -85,7 +82,6 @@ namespace tiago_controller
       auto base_controller = inria_wbc::controllers::Factory::instance().create(controller_name, controller_config);
       controller_ = std::dynamic_pointer_cast<inria_wbc::controllers::PosTracker>(base_controller);
       IWBC_ASSERT(controller_, " We need at least a PostTracker!");
-
 
       auto behavior_config = IWBC_CHECK(YAML::LoadFile(base_directory_ + "/" + behavior_yaml));
       auto behavior_name = behavior_config["BEHAVIOR"]["name"].as<std::string>();
@@ -182,6 +178,7 @@ namespace tiago_controller
     { // normal QP solver
       try
       {
+        ROS_INFO_STREAM("period:"<<period);
         behavior_->update(); //could have sensors here
       }
       catch (const std::exception &e)
@@ -233,9 +230,34 @@ namespace tiago_controller
     stop_controller_ = true;
   }
 
-  bool JointController::move_service_cb(tiago_controller::move::Request& req, std_srvs::Empty::Response &res)
-   {
+  // the pose message is here:http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/Pose.html
+  // from command line: rosservice call /tiago_controller/move  "{pose: {position: {x: 0.5, y: 0.5, z: 1}}, duration: 1., use_orientation: False, task_name: ee }"
+
+  bool JointController::move_service_cb(tiago_controller::move::Request &req, std_srvs::Empty::Response &res)
+  {
     ROS_INFO_STREAM("Starting a trajectory (service) to" << req);
+    auto target_pos = controller_->get_se3_ref("ee");
+    // copy the position (and keep the orientation)
+    target_pos.translation()(0) = req.pose.position.x;
+    target_pos.translation()(1) = req.pose.position.y;
+    target_pos.translation()(2) = req.pose.position.z;
+
+    auto behavior_move = std::dynamic_pointer_cast<inria_wbc::behaviors::generic::Move>(behavior_);
+    if (!behavior_move)
+    {
+      ROS_ERROR_STREAM("WRONG behavior: we need a Move behavior to use the service move");
+      return false;
+    }
+
+    try
+    {
+      behavior_move->set_trajectory_target(req.task_name, target_pos, req.duration);
+    }
+    catch (std::exception &e)
+    {
+      ROS_ERROR_STREAM("iwbc::exception:" << e.what());
+      return false;
+    }
     return true;
   }
 }
