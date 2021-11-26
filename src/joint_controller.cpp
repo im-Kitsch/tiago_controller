@@ -271,7 +271,7 @@ namespace tiago_controller
 
   bool JointController::move_service_cb(tiago_controller::move::Request &req, std_srvs::Empty::Response &res)
   {
-    if (mode_ != TRAK)
+    if (mode_ != TRAJ)
     {
       ROS_ERROR("ERROR [tiago_controller]: trying to send a trajectory in tracking mode! [traj ignored]");
       return false;
