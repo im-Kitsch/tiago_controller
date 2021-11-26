@@ -25,41 +25,48 @@ namespace inria_wbc
                     auto x = IWBC_CHECK(it->second["x"].as<pair_t>());
                     auto y = IWBC_CHECK(it->second["y"].as<pair_t>());
                     auto z = IWBC_CHECK(it->second["z"].as<pair_t>());
-                    workspaces_[task_name] = { x, y, z};
+                    workspaces_[task_name] = {x, y, z};
                 }
             }
 
-            void Move::set_trajectory_target(const std::string &task_name, const pinocchio::SE3 &target, float duration)
+            pinocchio::SE3 Move::put_in_workspace(const pinocchio::SE3 &point, const std::string &task_name)
+            {
+                if (workspaces_.find(task_name) == workspaces_.end())
+                    return point;
+
+                // filter by the workspace
+                auto range = [](double x, const std::pair<double, double> &min_max)
+                {
+                    return std::max(min_max.first, std::min(x, min_max.second));
+                };
+                pinocchio::SE3 p = point;
+                p.translation()(0) = range(p.translation()(0), workspaces_[task_name].x);
+                p.translation()(1) = range(p.translation()(1), workspaces_[task_name].y);
+                p.translation()(2) = range(p.translation()(2), workspaces_[task_name].z);
+                return p;
+            }
+
+            void Move::set_target(const std::string &task_name, const pinocchio::SE3 &target, float duration)
             {
                 // we assume that the target is valid (needs to be checked from outside!)
                 auto task_init = pos_tracker_->get_se3_ref(task_name);
                 auto pts = trajectory_handler::compute_traj(task_init, target, controller_->dt(), duration);
-                // filter by the workspace
-                auto range = [](double x, const std::pair<double, double>& min_max) {
-                    return std::max(min_max.first, std::min(x, min_max.second));
-                };
-                IWBC_ASSERT(workspaces_.find(task_name) != workspaces_.end(), task_name, "[task]-> workspace not found");
-                for (auto &p : pts) {
-                    p.translation()(0) = range(p.translation()(0), workspaces_[task_name].x);
-                    p.translation()(1) = range(p.translation()(1), workspaces_[task_name].y);
-                    p.translation()(2) = range(p.translation()(2), workspaces_[task_name].z);
-                }
+
+                for (auto &p : pts)
+                    p = put_in_workspace(p, task_name);
+
                 // assign the trajectory
                 trajectories_[task_name] = {.points = pts, .time = 0};
             }
 
-            // void Move::set_immediate_target(const pinocchio::SE3 &target)
-            // {
-            //     // we assume a close point... otherwise the robot will move at full speed
-            //     current_target_ = target;
-
-            //     // switch to immediate target mode
-            //     trajectory_.clear();
-            //     time_ = 0;
-            // }
-
             void Move::update(const controllers::SensorData &sensor_data)
             {
+                // trajectories have the top priority.
+                // So we first set the targets, then overwrite if there is a trajectory
+                for (auto &t : targets_)
+                    pos_tracker_->set_se3_ref(t.second, t.first);
+
+                // now trajectories refs
                 for (auto it = trajectories_.begin(); it != trajectories_.end(); /*nothing*/)
                 {
                     auto &traj = it->second;

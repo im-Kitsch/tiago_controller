@@ -18,9 +18,14 @@ namespace inria_wbc {
                 Move(const Move&) = delete;
                 virtual ~Move() {}
 
-                void set_trajectory_target(const std::string& task_name, const pinocchio::SE3& target, float duration);
-//                void set_immediate_target(const pinocchio::SE3& target, float duration);
-
+                // this makes a trajectory
+                void set_target(const std::string& task_name, const pinocchio::SE3& target, float duration);
+                
+                // this is as fast as possible (next time-step)
+                void set_target(const std::string& task_name, const pinocchio::SE3& target) {
+                    targets_[task_name] = put_in_workspace(target, task_name);
+                }
+                
                 bool target_reached(const std::string& task_name) const {
                     // trajectories are removed once they have reached their last point
                     return trajectories_.find(task_name) != trajectories_.end();
@@ -30,6 +35,7 @@ namespace inria_wbc {
                 std::string behavior_type() const override { return controllers::behavior_types::DOUBLE_SUPPORT; };
 
             private:
+                pinocchio::SE3 put_in_workspace(const pinocchio::SE3& point, const std::string& task_name);
                 struct Traj {
                     std::vector<pinocchio::SE3> points;
                     int time = 0;
@@ -42,6 +48,7 @@ namespace inria_wbc {
                 std::shared_ptr<controllers::PosTracker> pos_tracker_;
                 std::unordered_map<std::string, Traj> trajectories_;
                 std::unordered_map<std::string, Workspace> workspaces_;
+                std::unordered_map<std::string, pinocchio::SE3> targets_;
             };
         } // namespace generic
     } // namespace behaviors

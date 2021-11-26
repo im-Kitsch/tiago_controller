@@ -27,6 +27,8 @@
 // inria_wbc
 #include <inria_wbc/behaviors/behavior.hpp>
 #include <inria_wbc/controllers/pos_tracker.hpp>
+#include "tiago_controller/behavior_move.hpp"
+
 
 namespace tiago_controller
 {
@@ -53,8 +55,13 @@ namespace tiago_controller
 
         void initInriaWbc();
 
-        // callback
+        // callbacks
         bool move_service_cb(tiago_controller::move::Request& req, std_srvs::Empty::Response &res);
+        bool traj_mode_service_cb(std_srvs::Empty::Request& req, std_srvs::Empty::Response &res);
+        bool tracking_mode_service_cb(std_srvs::Empty::Request& req, std_srvs::Empty::Response &res);
+        void tracking_ee_cb(const geometry_msgs::Pose& pose);
+        void tracking_head_cb(const geometry_msgs::Pose& pose);
+        void set_target(const std::string& task_name, const geometry_msgs::Pose& p);
 
         // inria_wbc
         std::string yaml_inria_wbc_;
@@ -63,7 +70,7 @@ namespace tiago_controller
         std::vector<std::string> wbc_joint_names_;
         std::map<std::string, double> map_next_pos_;
         std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_;
-        std::shared_ptr<inria_wbc::behaviors::Behavior> behavior_move_;
+        std::shared_ptr<inria_wbc::behaviors::generic::Move> behavior_move_;
         
         std::shared_ptr<inria_wbc::controllers::PosTracker> controller_;
         inria_wbc::controllers::SensorData sensor_data_;
@@ -79,6 +86,16 @@ namespace tiago_controller
 
         // ROS topics and services
         ros::ServiceServer service_move_;
+        ros::ServiceServer service_traj_mode_;
+        ros::ServiceServer service_tracking_mode_;
+        ros::Subscriber sub_ee_tracking_; // subscriber for end-effector tracking
+        ros::Subscriber sub_head_tracking_;// subscriber for head tracking
+        ros::Publisher pub_ee_; // pose of the end-effector
+        ros::Publisher pub_head_; // pose of the head
+
+        // mode
+        enum mode_t { TRAJ, TRACKING };
+        mode_t mode_ = TRAJ;
     };
 
     template <typename Param>
