@@ -17,6 +17,7 @@ namespace inria_wbc
                 controller_->set_behavior_type(behavior_type_);
 
                 pos_tracker_ = std::static_pointer_cast<inria_wbc::controllers::PosTracker>(controller_);
+
                 auto workspace = IWBC_CHECK(c["workspace"]);
                 for (auto it = workspace.begin(); it != workspace.end(); ++it)
                 {
@@ -26,6 +27,12 @@ namespace inria_wbc
                     auto y = IWBC_CHECK(it->second["y"].as<pair_t>());
                     auto z = IWBC_CHECK(it->second["z"].as<pair_t>());
                     workspaces_[task_name] = {x, y, z};
+                }
+                auto tracking_limit = IWBC_CHECK(c["tracking_limit"]);
+                for (auto it = tracking_limit.begin(); it != tracking_limit.end(); ++it)
+                {
+                    auto task_name = IWBC_CHECK(it->first.as<std::string>());
+                    tracking_limits_[task_name] = it->second.as<double>();
                 }
             }
 
@@ -59,12 +66,25 @@ namespace inria_wbc
                 trajectories_[task_name] = {.points = pts, .time = 0};
             }
 
+            void Move::set_target(const std::string &task_name, const pinocchio::SE3 &target)
+            {
+                auto current_ref = pos_tracker_->get_se3_ref(task_name);
+                double dist = (current_ref.translation() - target.translation()).norm();
+                if (dist >= tracking_limits_[task_name])
+                    throw IWBC_EXCEPTION("Move :: tracking mode: distance exceed limit! d=",
+                                         dist, " max=", tracking_limits_[task_name]);
+                targets_[task_name] = put_in_workspace(target, task_name);
+            }
+
             void Move::update(const controllers::SensorData &sensor_data)
             {
                 // trajectories have the top priority.
-                // So we first set the targets, then overwrite if there is a trajectory
                 for (auto &t : targets_)
+                {
+                    if (trajectories_.find(t.first) != trajectories_.end())
+                        continue; // skip this if there is a trajectory
                     pos_tracker_->set_se3_ref(t.second, t.first);
+                }
 
                 // now trajectories refs
                 for (auto it = trajectories_.begin(); it != trajectories_.end(); /*nothing*/)

@@ -67,8 +67,8 @@ namespace tiago_controller
     service_traj_mode_ = control_nh.advertiseService("traj_mode", &JointController::traj_mode_service_cb, this);
     service_tracking_mode_ = control_nh.advertiseService("tracking_mode", &JointController::tracking_mode_service_cb, this);
     // subscribers
-    sub_ee_tracking_ = control_nh.subscribe("ee_target", 100, &JointController::tracking_ee_cb, this);
-    sub_head_tracking_ = control_nh.subscribe("head_target", 100, &JointController::tracking_head_cb, this);
+    sub_ee_tracking_ = control_nh.subscribe("ee_target", 5, &JointController::tracking_ee_cb, this);
+    sub_head_tracking_ = control_nh.subscribe("head_target", 5, &JointController::tracking_head_cb, this);
     // publishers
     pub_ee_ = control_nh.advertise<geometry_msgs::Pose>("ee_pose", 100);
     pub_head_ = control_nh.advertise<geometry_msgs::Pose>("head_pose", 100);
