@@ -76,7 +76,7 @@ namespace tiago_controller
 
     // TTS client
     tts_client_ = std::make_shared<TextToSpeechClient>("/tts");
-    tts_client_->text_to_speech("Initialization done, going to start position.");
+    tts_client_->text_to_speech("Code ready.");
 
     return true;
   }
@@ -211,6 +211,8 @@ namespace tiago_controller
       for (int i = 0; i < wbc_joint_names_.size(); ++i)
         rc_joints_[i].setCommand(init_sequence_q_.front()[i]);
       init_sequence_q_.pop_front(); //slow but we don' t care here..
+      if (init_sequence_q_.size() == 0)
+        tts_client_->text_to_speech("Initialization done. Ready.");
     }
     else
     { // normal QP solver
@@ -249,6 +251,8 @@ namespace tiago_controller
   void JointController::starting(const ros::Time &time)
   {
     ROS_INFO("Starting controller tiago_controller");
+    tts_client_->text_to_speech("Starting controller.");
+
     initInriaWbc();
     stop_controller_ = false;
 
@@ -269,6 +273,8 @@ namespace tiago_controller
   void JointController::stopping(const ros::Time &time)
   {
     ROS_INFO("Stopping controller tiago_controller");
+    ROS_INFO("Stopping controller.");
+
     stop_controller_ = true;
   }
 
@@ -303,6 +309,7 @@ namespace tiago_controller
     }
     catch (std::exception &e)
     {
+      tts_client_->text_to_speech("Error when moving!");
       ROS_ERROR_STREAM("iwbc::exception:" << e.what());
       return false;
     }
@@ -343,6 +350,7 @@ namespace tiago_controller
     }
     catch (std::exception &e)
     {
+      tts_client_->text_to_speech("Error when setting target!");
       ROS_ERROR_STREAM("iwbc::exception:" << e.what());
       return;
     }
