@@ -1,7 +1,7 @@
 BEHAVIOR:
   name : generic::move
   tracking_limit:
-    ee: 0.025 # 2.5 cm
+    ee: 0.03 # 3 cm
   workspace:
     ee: # task name
       x: [0.3,1.0] # min,max
