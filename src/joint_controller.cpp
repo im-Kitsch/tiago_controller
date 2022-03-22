@@ -346,6 +346,7 @@ namespace tiago_controller
     try
     {
       auto target_pos = geometry_to_se3(pose);
+      std::cout<<"set target to:"<<pose<<std::endl;
       behavior_move_->set_target(task_name, target_pos);
     }
     catch (std::exception &e)
