@@ -334,6 +334,7 @@ namespace tiago_controller
   {
     if (mode_ != TRACKING)
     {
+      tts_client_->text_to_speech("Not in tracking mode!");
       ROS_WARN("Warning [tiago_controller]: trying to send tracking positions whereas in trajectory mode! [tracking ignored]");
       return;
     }

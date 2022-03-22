@@ -55,6 +55,8 @@ namespace inria_wbc
 
             void Move::set_target(const std::string &task_name, const pinocchio::SE3 &target, float duration)
             {
+                if (pinocchio::hasNaN(target.rotation()) || pinocchio::hasNaN(target.translation()))
+                    throw IWBC_EXCEPTION("Move :: traj mode: NaN in target!");
                 // we assume that the target is valid (needs to be checked from outside!)
                 auto task_init = pos_tracker_->get_se3_ref(task_name);
                 auto pts = trajectory_handler::compute_traj(task_init, target, controller_->dt(), duration);
@@ -68,6 +70,8 @@ namespace inria_wbc
 
             void Move::set_target(const std::string &task_name, const pinocchio::SE3 &target)
             {
+                if (pinocchio::hasNaN(target.rotation()) || pinocchio::hasNaN(target.translation()))
+                    throw IWBC_EXCEPTION("Move :: tracking mode: NaN in target!");
                 auto current_ref = pos_tracker_->get_se3_ref(task_name);
                 double dist = (current_ref.translation() - target.translation()).norm();
                 if (dist >= tracking_limits_[task_name])
