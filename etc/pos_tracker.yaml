@@ -15,3 +15,4 @@ CONTROLLER:
   mimic_dof_names : []
   check_model_collisions: true
   collision_path: collisions.yaml
+  solver: eiquadprog
