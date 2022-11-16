@@ -59,7 +59,8 @@ namespace inria_wbc
                     throw IWBC_EXCEPTION("Move :: traj mode: NaN in target!");
                 // we assume that the target is valid (needs to be checked from outside!)
                 auto task_init = pos_tracker_->get_se3_ref(task_name);
-                auto pts = trajectory_handler::compute_traj(task_init, target, controller_->dt(), duration);
+                // auto pts = trajectory_handler::compute_traj(task_init, target, controller_->dt(), duration);
+                auto pts = inria_wbc::trajs::min_jerk_trajectory(task_init, target, controller_->dt(), duration);
 
                 for (auto &p : pts)
                     p = put_in_workspace(p, task_name);
