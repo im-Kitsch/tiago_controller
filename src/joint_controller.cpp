@@ -3,7 +3,8 @@
 
 #include "tiago_controller/joint_controller.hpp"
 
-#include <inria_wbc/utils/trajectory_handler.hpp>
+// #include <inria_wbc/utils/trajectory_handler.hpp>
+#include <inria_wbc/trajs/trajectory_generator.hpp>
 
 namespace tiago_controller
 {
@@ -262,7 +263,8 @@ namespace tiago_controller
       current_joint_pos[i] = rc_joint_states_[i].getPosition();
     ROS_INFO_STREAM("tiago_controller starting, joints=" << current_joint_pos.transpose());
     // minimum jerk initialization trajectory for init sequence
-    auto q_v = trajectory_handler::compute_traj(
+    // auto q_v = trajectory_handler::compute_traj(
+    auto q_v = inria_wbc::trajs::min_jerk_trajectory(
         current_joint_pos,
         controller_->q0(),
         controller_->dt(),
