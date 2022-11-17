@@ -3,3 +3,5 @@ float32 duration
 bool use_orientation
 bool use_position
 string task_name
+---
+string idle_msg

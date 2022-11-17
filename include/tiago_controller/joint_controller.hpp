@@ -56,7 +56,7 @@ namespace tiago_controller
         void initInriaWbc();
 
         // callbacks
-        bool move_service_cb(tiago_controller::move::Request& req, std_srvs::Empty::Response &res);
+        bool move_service_cb(tiago_controller::move::Request& req, tiago_controller::move::Response &res);
         bool traj_mode_service_cb(std_srvs::Empty::Request& req, std_srvs::Empty::Response &res);
         bool tracking_mode_service_cb(std_srvs::Empty::Request& req, std_srvs::Empty::Response &res);
         void tracking_ee_cb(const geometry_msgs::Pose& pose);

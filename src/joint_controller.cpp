@@ -283,7 +283,7 @@ namespace tiago_controller
   // the pose message is here:http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/Pose.html
   // from command line: rosservice call /tiago_controller/move  "{pose: {position: {x: 0.5, y: 0.5, z: 1}}, duration: 1., use_orientation: False, task_name: ee }"
 
-  bool JointController::move_service_cb(tiago_controller::move::Request &req, std_srvs::Empty::Response &res)
+  bool JointController::move_service_cb(tiago_controller::move::Request &req, tiago_controller::move::Response &res)
   {
     if (mode_ != TRAJ)
     {
