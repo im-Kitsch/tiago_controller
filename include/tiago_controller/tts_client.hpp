@@ -33,6 +33,7 @@ public:
         auto tts_call_function = [=]()
         {
             ros::Duration timeout_sec(3.0);
+            ROS_INFO_STREAM("[TTS client] Say:" << text);
 
             // if (_tts_client->waitForServer(timeout_sec))
             // {

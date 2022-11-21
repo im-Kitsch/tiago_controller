@@ -240,7 +240,8 @@ namespace tiago_controller
       } // we do nothing
       else
       {
-        ROS_INFO("Tiago controller is stopped");
+        // ROS_INFO("Tiago controller is stopped");   # TODO, if ROS_INFO_ONCE? Or as ROS_DEBUG?
+        ROS_DEBUG("Tiago controller is stopped");
       }
     }
 
